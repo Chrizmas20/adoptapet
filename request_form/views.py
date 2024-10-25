@@ -1,4 +1,3 @@
-#views.py request_form app
 from django.shortcuts import render, get_object_or_404, redirect
 from .forms import AdoptionForm
 from pet_listing.models import Pet
@@ -56,20 +55,33 @@ def confirmation(request):
     user = User.objects.get(id=adoption_data['adopter_id'])
 
     if request.method == 'POST':  # User clicked "Confirm" on the confirmation page
-        # Create and save the adoption object
-        adoption = Adoption.objects.create(
+        # Check if there's already an adoption record
+        adoption, created = Adoption.objects.get_or_create(
             adopter=user,
             pet=pet,
-            first_name=adoption_data['first_name'],
-            last_name=adoption_data['last_name'],
-            age=adoption_data['age'],
-            contact_number=adoption_data['contact_number'],
-            address=adoption_data['address'],
-            email=adoption_data['email'],
-            date=adoption_data['date'],
+            defaults={
+                'first_name': adoption_data['first_name'],
+                'last_name': adoption_data['last_name'],
+                'age': adoption_data['age'],
+                'contact_number': adoption_data['contact_number'],
+                'address': adoption_data['address'],
+                'email': adoption_data['email'],
+                'date': adoption_data['date'],
+            }
         )
+
+        if not created:  # If the adoption already exists, update its details
+            adoption.first_name = adoption_data['first_name']
+            adoption.last_name = adoption_data['last_name']
+            adoption.age = adoption_data['age']
+            adoption.contact_number = adoption_data['contact_number']
+            adoption.address = adoption_data['address']
+            adoption.email = adoption_data['email']
+            adoption.date = adoption_data['date']
+            adoption.save()  # Save the updated record
+
         del request.session['adoption_data']  # Clear session data
-        return redirect('schedule', pet_id=pet.id)  # Redirect to a success page
+        return redirect('schedule', pet_id=pet.id)  # Redirect to the schedule page
 
     # If GET request, render the confirmation page
     return render(request, 'confirmation.html', {
