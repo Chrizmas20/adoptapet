@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>{{title_text}}</title>
+        {%load static%}
+        <link rel="stylesheet" href="{%static 'login.css'%}?{% now 'U'%}">
+    </head>
+    <body>
+        <div>
+            <div id="designBox"></div>
+                <img src="{%static '/images/logo.png'%}" id="logo" style="position: fixed; left: 12%; top: 4%">
+
+                <h1 id="slogan" style="position:fixed; left:15%; top:15%; max-width: 100%;"><span style="color: #FF6F61;">Happiness</span><br>starts here</h1>
+
+                <img src="{% static '/images/login-person.png' %}" id="person" style="position: fixed; left:14%; top: 45%">
+            </div>
+
+            <div id="loginBox">
+                <h2 class="center">{{title_text}}</h2>
+
+                <p class="center">- OR -</p>
+
+                <form method="post">
+                    {%csrf_token%}
+
+                    {{  form.as_p   }}
+
+                    {% if validation != None %}
+                        <span style="color: red">{{  validation }}</span>
+                    {% endif %}
+
+                    <div class="center">
+                        <input type="submit" value='{{submit_text}}'>
+                    </div>
+
+                    <p class="center">{{redirect_message}} <a href="{% url redirect_link %}">{{redirect_title}}</a></p>
+                </form>
+            </div>
+
+            
+        </div>
+    </body>
+</html>
