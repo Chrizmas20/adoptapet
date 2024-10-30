@@ -65,8 +65,6 @@ def schedule(request, pet_id):
 def success(request):
     return render(request, 'success.html')  # Render a success template or redirect as necessary
 
-def pickup_list(request):
-    return render(request, 'pickup_list.html')
 
 def pickup_list(request):
     user_id = request.session.get('user_id')
