@@ -1,3 +1,4 @@
+#changed
 from django.shortcuts import render, redirect
 from .forms import LoginForm, RegisterForm
 from .models import User

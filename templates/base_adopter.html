@@ -208,7 +208,7 @@
                 <img src="{% static 'images/home.png' %}" alt="My Adoption" class="icon-img">
                 My Adoption
             </a>
-            <a href="#">
+            <a href="{% url 'pickup_list' %}" class="{% if request.resolver_match.url_name == 'pickup_list' %} active {% endif %}">
                 <img src="{% static 'images/pickup.png' %}" alt="Pick Up List" class="icon-img">
                 Pick Up List
             </a>
