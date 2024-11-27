@@ -1,11 +1,8 @@
-#changed
 from django.shortcuts import render, redirect
+from django.contrib.auth.hashers import check_password, make_password
 from .forms import LoginForm, RegisterForm
 from .models import User
-
-# Create your views here.
-def login(request):
-    return render(request,'login.html')
+from profile_management.models import Profile
 
 def Login(request):
     validation_error = None
@@ -16,32 +13,37 @@ def Login(request):
         if form.is_valid():
             email = form.cleaned_data['email']
             password = form.cleaned_data['password']
+            remember_me = form.cleaned_data['remember_me']
 
             user = User.objects.filter(email=email).first()
 
-            if user:
-                if user.password == password:
-                    # Store the user's ID in the session
-                    request.session['user_id'] = user.id
-                    request.session['user_type'] = 'Admin' if user.isAdmin else 'Adopter'
+            if user and check_password(password, user.password):
+                request.session['user_id'] = user.id
+                request.session['user_type'] = 'Admin' if user.isAdmin else 'Adopter'
+                request.session['user_first_name'] = user.first_name
+                request.session['user_last_name'] = user.last_name
+                request.session['remember_me'] =  True if remember_me else False
 
-                    # Redirect to appropriate page after successful login
-                    return redirect('adopter_pet_list')
-                else:
-                    validation_error = 'Invalid password'
+                profile = Profile.objects.filter(user=user).first()
+                request.session['profile_image_url'] = profile.profile_image.url if profile and profile.profile_image else None
+
+                next_url = request.GET.get('next', 'admin_pet_list' if user.isAdmin else 'adopter_pet_list')
+                return redirect(next_url)
+               
             else:
-                validation_error = 'Email does not exist'
+                validation_error = 'Invalid email or password.'
     else:
-        form = LoginForm()
+        if request.session.get('remember_me',None) == True:
+            id = request.session['user_id']
+            user = User.objects.get(id=id)
+            form = LoginForm(initial={'remember_me': True, 'email': user.email, 'password': "tf man"})
+
+        else:
+            form = LoginForm()
 
     return render(request, 'login.html', {
         'form': form,
         'validation': validation_error,
-        'title_text': 'Login',
-        'submit_text': 'Log in',
-        'redirect_message': "Don't have an account?",
-        'redirect_title': 'Sign up',
-        'redirect_link': 'adopter_register'
     })
 
 def Register(request): 
@@ -51,38 +53,25 @@ def Register(request):
         form = RegisterForm(request.POST)
         
         if form.is_valid():
-            first_name = form.cleaned_data['first_name']
-            last_name = form.cleaned_data['last_name']
-            age = form.cleaned_data['age']
-            contact_no = form.cleaned_data['contact_no']
-            address = form.cleaned_data['address']
-            email = form.cleaned_data['email']
-            password = form.cleaned_data['password']
-            confirm_password = form.cleaned_data['confirm_password']
-
-            user = User.objects.filter(email = email)
-
-            if(not user.exists()):
-                if(password == confirm_password):
-                    userType = 'Adopter'
-
-                    
-                    regUser = User.objects.create(
-                        first_name = first_name,
-                        last_name = last_name,
-                        age = age,
-                        contact_no = contact_no,
-                        address = address,
-                        email = email,
-                        password = password,)
-                    
-                    return redirect(login)
-                else:
-                    validation_error = 'Password and Confirm Password are not the same'
-            else:
-                validation_error = 'Email already exists'
-
+            form.save()
+            return redirect('login') 
+        else:
+            validation_error = "Please correct the errors above."
     else:
         form = RegisterForm()
 
-    return render(request, 'login.html', {'form': form, 'validation': validation_error, 'title_text': 'Register', 'submit_text': "Sign up", 'redirect_message': 'Already have an account?', 'redirect_title': 'Log in', 'redirect_link': 'login'})
+    return render(request, 'register.html', {
+        'form': form,
+        'validation': validation_error,
+    })
+
+
+def logout(request):
+    remember_me = request.session['remember_me']
+
+    if 'user_id' in request.session and not remember_me:
+        del request.session['user_id']
+    if 'user_type' in request.session:
+        del request.session['user_type']
+
+    return redirect('login')
